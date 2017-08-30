@@ -1,0 +1,224 @@
+* {
+    box-sizing: border-box;
+}
+
+.contractBox {
+  display: inline-block;
+  position: absolute;
+  left: 32%;
+  top: 33px;
+	width: 100%;
+}
+
+.contractSummary {
+  display: inline-block;
+  position: absolute;
+  left: 32%;
+  top: 33px;
+  width: 100%;
+}
+
+.SummaryLabel {
+  position: relative;
+  bottom: 5px;
+  padding-right: 20px;
+  padding-left: 20px;
+  text-align: center;
+  width: 33% !important;
+  left: 11%;
+}
+
+.SummaryContract {
+  position: relative;
+  width: 33%;
+  left: 11%;
+  padding: 20px; 
+
+}
+
+.summary {
+  position: absolute;
+  margin: auto;
+  top: 20px;
+  left: 25%;
+  width: 100%;
+}
+
+.summaryBox {
+  position: absolute;
+  background-color: #fff;
+  padding: 20px; 
+
+  width: 36%;
+}
+
+.SummaryLabel {
+  position: relative;
+  width: 50%;
+  bottom: 5px;
+  padding-right: 20px;
+  padding-left: 20px;
+  text-align: center;
+}
+
+.metricsBox {
+  position: absolute;
+  background-color: #fff;
+  padding-top: 5px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  left: -24%;
+  float: left;
+  width: 23%;
+}
+
+.getBox {
+  position: absolute;
+  background-color: #fff;
+  padding-top: 5px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  right: 40%;
+  float: right;
+  width: 23%;
+}
+
+.gasBox {
+/*	position: absolute;
+	margin: auto;
+	left:0;
+  	right:0;
+	width: 25%;
+	background-color: #fff;*/
+	position: absolute;
+	background-color: #fff;
+	padding-top: 5px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  left: 39%;
+  float: right;
+	width: 20%;
+}
+
+.descriptionBox {
+/*  position: absolute;
+  margin: auto;
+  left:0;
+    right:0;
+  width: 25%;
+  background-color: #fff;*/
+  position: absolute;
+  background-color: #fff;
+  padding-top: 5px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  left: 39%;
+  float: right;
+  width: 20%;
+  margin-top: 270px;
+}
+
+.descriptionNameBox {
+/*  position: absolute;
+  margin: auto;
+  left:0;
+    right:0;
+  width: 25%;
+  background-color: #fff;*/
+  position: absolute;
+  background-color: #fff;
+  padding-top: 5px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  left: 39%;
+  float: right;
+  width: 20%;
+  margin-top: 120px;
+}
+
+.contractView {
+  font-size: 16px; 
+  display: inline-block;
+  margin-bottom: 8px;
+  width: calc(25% - 6px);
+  margin-right: 8px;
+  padding: 20px;
+}
+
+.allContracts {
+    display: inline-block;
+    position: absolute;
+    top: 39px;
+    left: calc(25%/2);
+    width:100%;
+/*    position: absolute;
+    margin: auto;
+    top:0;
+    bottom: 0;
+    right: 0;
+    left: 0;*/
+}
+
+/*.contractTemplate {
+  position: relative;
+  top: 33px;
+}*/
+
+.contractView:nth-of-type(2n) {
+    margin-right: 8px;
+}
+
+/*.contractView:nth-of-type(4n) {
+    margin-right: 0;
+  }*/
+
+.addBalance {
+  float: right;
+}
+
+.Contract {	
+	position: absolute;
+/*	position: absolute;
+  	width: 75%;
+  	margin: auto;
+  	left:0;
+  	right:0;
+	padding: 20px; 
+	background-color: #fff;*/
+/*	margin: auto;
+  	right:0;
+
+	left:0;*/
+	background-color: #fff;
+	padding: 20px; 
+
+	width: 36%;
+}
+
+.progress {
+  position: relative;
+  margin: auto;
+}
+
+.textBox {
+/*	position:relative;
+*/	color: #2196F3;
+}
+
+.lock {
+	position:absolute;
+	top: 0px;
+	left: 96%;
+}
+
+
+* {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}

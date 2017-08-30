@@ -1,0 +1,63 @@
+pragma solidity ^0.4.2;
+contract Conference {  // can be killed, so the owner gets sent the money in the end
+
+	address public organizer;
+	mapping (address => uint) public registrantsPaid;
+	uint public numRegistrants;
+	uint public quota;
+	uint public balance;
+
+	event Deposit(address _from, uint _amount); // so you can log the event
+	event Refund(address _to, uint _amount); // so you can log the event
+
+	function Conference(uint _balance) {
+		organizer = msg.sender;		
+		quota = 100;
+		numRegistrants = 0;
+		balance = _balance;
+	}
+
+	function getBalance() constant returns (uint) {
+		return balance;
+	}
+	
+	function addToBalance(uint change) returns (uint) {
+		balance = balance + change;
+		return balance;
+	}
+
+	function buyTicket() public payable {
+		if (numRegistrants >= quota) { 
+			throw; // throw ensures funds will be returned
+		}
+		registrantsPaid[msg.sender] = msg.value;
+		numRegistrants++;
+		Deposit(msg.sender, msg.value);
+	}
+
+	function changeQuota(uint newquota) public {
+		if (msg.sender != organizer) { return; }
+		quota = newquota;
+	}
+
+	function refundTicket(address recipient, uint amount) public {
+		if (msg.sender != organizer) { return; }
+		if (registrantsPaid[recipient] == amount) { 
+			address myAddress = this;
+			if (myAddress.balance >= amount) { 
+				if(!recipient.send(amount))
+					throw;
+				Refund(recipient, amount);
+				registrantsPaid[recipient] = 0;
+				numRegistrants--;
+			}
+		}
+		return;
+	}
+
+	function destroy() {
+		if (msg.sender == organizer) { // without this funds could be locked in the contract forever!
+			suicide(organizer);
+		}
+	}
+}

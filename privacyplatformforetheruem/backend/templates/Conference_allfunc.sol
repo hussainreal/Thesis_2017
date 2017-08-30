@@ -1,0 +1,458 @@
+pragma solidity ^0.4.2;
+
+contract Expenses {  // can be killed, so the owner gets sent the money in the end
+
+    address public organizer;
+    uint256 public balance;
+    uint in_prec = 16;    //== 2048-bit number (happens when key of encryption is 1024-bit)
+    uint out_prec = 32;
+    uint base = 16;
+    uint solprecused = 128;
+    uint radix = 128;                // Size of uint
+    uint half =     2**(radix/2);       // Half bitwidth
+    uint low =      half - 1;           // Low mask
+    uint high =     low << (radix/2);   // High mask
+    uint max =      high | low;         // Max value
+    uint[2] zero =  [0, 0];             // bigInt zero
+    uint[2] one =   [1, 0];             // bigInt one
+    
+    
+    function Expenses(uint256 _balance) {
+        organizer = msg.sender;
+        balance = _balance;
+    }
+
+    function getBalance() constant returns (uint256) {
+        return balance;
+    }
+
+
+    // basic add - no encryption
+    function addToBalance(uint change) returns (uint) {
+        balance = balance + change;
+        return balance;
+    }
+    
+    function _max(uint a, uint b) constant returns(uint){
+        if (a > b)
+            return a;
+        
+        return b;
+    }
+
+    function add(uint128[] x, uint128[] y) constant returns(uint128[])
+    {
+        uint128[] memory xh = new uint128[](16);
+        
+        
+        uint256 carry = 0;
+        uint outputSize = _max(x.length, y.length);// + 1;
+        uint128[] memory sum = new uint128[](outputSize);
+        uint256 MAX = 2**128;
+
+
+        for(uint i = 0; i < outputSize-1; i++){
+            uint256 sol = uint256(x[i]) + uint256(y[i]) + carry;
+
+            carry = sol / MAX;
+            sum[i] = uint128(sol % MAX);
+        }
+        
+        sum[outputSize-1] = uint128(carry);
+        
+        return sum;
+
+    }
+    /* hardcoded add
+    function add(uint128[] a, uint128[] b) constant returns(uint128[])
+    {
+        uint128[] memory xh = new uint128[](16);
+        
+        
+        uint256 carry = 0;
+        uint128[16] memory x = [uint128(1),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(340282366920938463463374607431768211455)];
+        uint128[16] memory y = [uint128(340282366920938463463374607431768211455),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(0),uint128(340282366920938463463374607431768211455)];
+        uint outputSize = _max(x.length, y.length);// + 1;
+        uint128[] memory sum = new uint128[](outputSize);
+        uint256 MAX = 2**128;
+
+
+        for(uint i = 0; i < outputSize-1; i++){
+            uint256 sol = uint256(x[i]) + uint256(y[i]) + carry;
+
+            carry = sol / MAX;
+            sum[i] = uint128(sol % MAX);
+        }
+        
+        sum[outputSize-1] = uint128(carry);
+        
+        return sum;
+
+    }
+    */
+    
+    function sub(uint128[] x, uint128[] y) constant returns(uint128[])
+    {
+        uint128[] memory diff;
+        uint128 borrow;
+
+        // Start from the least significant bits
+        uint i;
+        for (i = 0; i < x.length; ++i)
+        {
+            diff[i] =  x[i] - y[i] - borrow;
+            if (x[i] < y[i] + borrow || (y[i] == max && borrow == 1))   // Check for underflow
+                borrow = 1;
+            else
+                borrow = 0;
+        }
+
+        return (diff);
+    }
+    
+    //Input is a hex string, eg: "ffff", "1234" (max 512 characters)
+    //Output is a hex string, eg: "ffe01394" (1024 characters if in_prec = 16)
+    function multiply(string A, string B) constant returns (string){
+        
+        uint128[] memory a = stringToUintArray(reverseString(A));
+        uint128[] memory b = stringToUintArray(reverseString(B));
+        
+        string memory C = uintArrayToString(mulbig(a,b));
+        return reverseString(C);
+    }
+
+    function mulbig(uint128[] a, uint128[] b) constant returns (uint128[]) {
+        
+        uint128[] memory total = new uint128[](out_prec);
+        uint128[] memory r = new uint128[](out_prec);
+        uint256 mask = uint256(base**out_prec);
+
+        uint i;
+        
+        for(i=0; i < a.length; i++) {
+            //initiaze row to 0
+            for(uint k=0; k < out_prec; k++){
+                r[k] = 0;
+            }   
+            
+            uint j;
+            uint256 p = 0;
+            uint128 carry = 0;
+
+            //multiply row
+            for(j=0; j < b.length; j++){
+                p = uint256(a[i]) * uint256(b[j]) + uint256(carry);    //this is the previous carry
+                carry = uint128(p / mask);                            //calculating new carry here
+                r[j+i] = uint128(p % mask);    
+            }
+            r[j+i] = carry;
+            
+            //add row to total
+            carry = 0;
+            p = 0;
+            for(uint l=0; l < out_prec; l++) {
+                p = uint256(r[l]) + uint256(total[l]) + uint256(carry);
+                carry = uint128(p / mask);
+                total[l] = uint128(p % mask);
+            }            
+        }   
+
+        return (total);
+    }
+
+    // Utility functions that support the multiply function
+    function reverseString(string s) constant returns (string){
+        bytes memory b = bytes(s);
+        bytes memory r = new bytes(b.length);
+
+        uint i;
+        for(i=0; i<b.length; i++){
+            r[b.length-i-1] = b[i];
+        }
+        return string(r);
+    }
+    
+    function stringToUintArray(string a) constant returns (uint128[]){
+        bytes memory b = bytes(a);
+        uint128[] memory t = new uint128[](in_prec);
+
+        for(uint i = 0; i < in_prec && i < b.length; i++){
+            uint x = 0;
+            uint n = 0;
+            for(uint j = 0; j < out_prec && i*out_prec + j < b.length; j++){
+                n = hextoint(b[j+i*out_prec]);
+                x = x + n*(in_prec**j);
+            }
+            
+            t[i] = uint128(x);
+        }
+        return (t);
+    }
+
+    function uintArrayToString(uint128[] t) constant returns (string str){
+        bytes memory b = new bytes(solprecused*out_prec/4); // {128 * 32 / 4} (4 because each hex represents 4bits)
+
+        for(uint i = 0; i < out_prec; i++){
+            uint256 x = t[i];
+            uint256 n;
+            uint256 m;
+            for(uint j = 0; j < out_prec; j++){
+                m = (base**(out_prec-j-1));
+                n = x/m;
+                x = x - n*m;
+                b[i*out_prec+out_prec-j-1] = inttohex(uint8(n));
+            }
+        }
+
+        str = string(b);
+
+        return (str);
+    }
+
+    function hextoint(byte a) constant returns (uint8){
+        uint8 n = uint8(a);
+        uint8 x;
+        if(n >= 48 && n <=57){
+            x = n - 48;
+        }
+        else if(n >= 97 && n <= 102){
+            x = n - 97 + 10;
+        }
+        else if(n >= 65 && n <= 70){
+            x = n - 65 + 10;
+        }
+        else{
+            throw;
+        }
+        return x;
+    } 
+    
+    function inttohex(uint8 n) constant returns (byte){
+        uint8 x;
+        if(n >= 0 && n <= 9){
+            x = n + 48;
+        }
+        else if(n >= 10 && n <= 15){
+            x = n - 10 + 97;
+        }
+        else{
+            throw;
+        }
+        return byte(x);
+    }
+    
+
+
+    // EXTRA functions used for debugging. NOT USED in the multiply function above
+    function stringToUint(string a) constant returns (uint128) {
+        bytes memory b = bytes(a);
+        uint i;
+        uint result = 0;
+        for(i=0; i<b.length; i++){
+            uint c = uint(b[i]);
+            if (c >= 48 && c <= 57) {
+                result = result * 10 + (c - 48);
+            }
+        }
+        return uint128(result);
+    }
+    
+    function stringHexToUint(string a) constant returns (uint128) {
+        bytes memory b = bytes(a);
+        uint i;
+        uint result = 0;
+        for(i=0; i<b.length; i++){
+            uint c = hextoint(b[i]);
+            result = result * 16 + c;
+        }
+        return uint128(result);
+    }
+    
+
+    
+    function stringToUintArray8(string a) constant returns (uint8[8] t){
+        bytes memory b = bytes(a);
+
+        for(uint i = 0; i < b.length; i++){
+            t[i] = uint8(b[i]) - 48;
+        }
+
+        return t;
+    }
+    
+    function uintArrayToString2048(uint8[2048] t) constant returns (string str){
+        bytes memory b = new bytes(2048);
+
+        for(uint i = 0; i < t.length; i++){
+            b[i] = byte(t[i] + 48);
+        }
+
+        str = string(b);
+
+        return str;
+    }
+    
+    function maximum(uint a, uint b) returns (uint) {
+        if (a > b) return a;
+        else return b;
+    }
+    
+    function destroy() {
+        if (msg.sender == organizer) { // without this funds could be locked in the contract forever!
+            suicide(organizer);
+        }
+    }
+    function compa(uint128[]x, uint128[]y) constant returns(int8)
+    {
+        uint len = x.length;
+        // Compare the most significant bits first
+        for (uint k = 0; k < len; ++k)
+        {
+            //If x > y: return 1
+            if (x[len-k-1] > y[len-k-1])
+                return 1;
+            //If y > x: return -1
+            else if (x[len-k-1] < y[len-k-1])
+                return -1;
+            //Else, keep looping
+        }
+
+        return 0;
+    }
+    
+    function leftShift(uint128[] x, uint y) constant returns(uint128[])
+    {
+        uint128[] memory zero = stringToUintArray("0");
+        
+        if (compa(x, zero) == 0)  // Return if zero
+            return x;
+        
+        if (y==0)  // no shift
+            return x;
+
+        uint128 carry;
+        uint128 one = 1;
+        
+        uint128[] memory r = x;
+        
+        for (uint j = y; j > 0; j--)
+        {
+            for (uint i = 0; i < (x.length - 1) ; ++i)
+            {
+                r[i] =  (x[i] << 1) + carry;
+                carry = x[i] >> (radix - 1);
+            }
+        }
+        //r[1] = one;
+
+        return r;
+    }
+    function rightShift(uint128[] x, uint y) constant returns(uint128[])
+    {
+        uint128[] memory zero = stringToUintArray("0");
+        
+        
+        if (compa(x, zero) == 0)  // Return if zero
+            return x;
+            
+        if (y==0)  // no shift
+            return x;
+
+        uint128 carry;
+        uint128 one = 1;
+        
+        uint128[] memory r = x;
+        
+        for (uint j = y; j > 0; j--)
+        {
+            for (uint i = (x.length - 1); i < 0 ; i--)
+            {
+                r[i] =  (x[i] >> 1) + carry;
+                carry = x[i] << (radix - 1);
+            }
+        }
+        //r[1] = one;
+
+        return r;
+    }
+    
+    function binaryMod(uint digitsInR, uint128[] T) constant returns(uint128[])
+    {
+    	uint numberOfKeptElements;
+    	uint numberOfKeptRemainderBits;
+    	
+    	uint128 maxFill = 340282366920938463463374607431768211455;
+    	
+    	uint outputSize = T.length;
+    	
+    	if(outputSize > 16)
+    	    outputSize = 16;
+    	
+    	uint128[] memory y = new uint128[](outputSize);
+    	uint128[] memory c = new uint128[](outputSize);
+    	
+    	
+    	if(digitsInR > radix)
+    	{
+    	    numberOfKeptElements = digitsInR/radix; //radix = 128; i.e. bits/element
+    	    numberOfKeptRemainderBits = digitsInR - (radix*numberOfKeptElements);
+    	}
+    	else
+    	{
+    	    numberOfKeptElements = 0;
+    	    numberOfKeptRemainderBits = radix - digitsInR;
+    	}
+
+    	uint j=0;
+    	
+    	if(numberOfKeptElements == 0)
+    	{
+    	    y[0]  = uint128(2**(numberOfKeptRemainderBits)-1);
+    	    j++;
+    	}
+    	else
+    	{
+        	for(j; j <= numberOfKeptElements; j++)
+        	{
+        	    y[j] = maxFill;
+        	}
+        	
+        	return y;
+        	y[j+1]= uint128(2**(numberOfKeptRemainderBits)-1);   
+    	}
+    	
+        for(uint i = 0; i< (outputSize-1); i++)
+        {
+            c[i] = uint128(T[i])&y[i];
+        }
+        
+        return c;
+
+    }
+    
+    
+    //Note this is done in binary. so you can just drop higher order bits for modulos
+    function REDC(uint128[] T, uint128[] R, uint128[] q, uint128[] qprime, uint digitsInR) constant returns(uint128[])
+    {
+
+        //m = ((T mod R) · q') mod R
+
+        uint128[] memory a = binaryMod(digitsInR, T); //TmodR
+
+        uint128[] memory b = mulbig(a, qprime); //(TmodR)*q'
+
+        uint128[] memory m = binaryMod(digitsInR, b); // m = ((TmodR)3*q')modR
+
+        uint128[] memory c = mulbig(m, q); // m*q
+
+        uint128[] memory d = add(c, T); // T+m*q
+
+        uint128[] memory t = rightShift(d, digitsInR); //t = (T+m*q)/R
+        
+        uint128[] memory S = t;
+
+        return S;
+    }
+    
+}
+

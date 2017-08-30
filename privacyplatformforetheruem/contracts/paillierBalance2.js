@@ -1,0 +1,12 @@
+var paillierbalance2Contract = web3.eth.contract([{"constant":true,"inputs":[],"name":"n","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"encryptedChange","type":"uint256"}],"name":"homomorphicAdd","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"encryptedBalance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"g","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"controller","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"inputs":[],"type":"constructor"}]);
+var paillierbalance2 = paillierbalance2Contract.new(
+   {
+     from: web3.eth.accounts[0], 
+     data: '60606040527f1ce96c13d6b86c644553988beea68834534d94859a492dfbc042250fa223842d6001600050556fa2f631156d2539f8ed6e39b67fa8a3046002600050556fa2f631156d2539f8ed6e39b67fa8a3036004600050555b6000600033600360006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908302179055506004600050549050806002810a925050816000600050819055505b505061020c806100b46000396000f360606040526000357c0100000000000000000000000000000000000000000000000000000000900480632e52d606146100685780636ea0dd6a14610090578063955d505d146100ad578063e2179b8e146100d5578063f77c4791146100fd57610063565b610002565b346100025761007a600480505061013b565b6040518082815260200191505060405180910390f35b34610002576100ab6004808035906020019091905050610144565b005b34610002576100bf60048050506101d4565b6040518082815260200191505060405180910390f35b34610002576100e760048050506101dd565b6040518082815260200191505060405180910390f35b346100025761010f60048050506101e6565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b60046000505481565b600060006000600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415156101a657610002565b60016000505492506000600050549150828483808284099350505050806001600050819055505b5b50505050565b60016000505481565b60026000505481565b600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff168156', 
+     gas: 4700000
+   }, function (e, contract){
+    console.log(e, contract);
+    if (typeof contract.address !== 'undefined') {
+         console.log('Contract mined! address: ' + contract.address + ' transactionHash: ' + contract.transactionHash);
+    }
+ })
