@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from flask import Flask, jsonify, request, abort
-from paillier.paillier import paillier
+from paillier.paillier import *
 import pprint
 import math
 import time
